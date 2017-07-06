@@ -1,0 +1,38 @@
+---
+- hosts: all
+  become: true
+  become_user: root
+  vars_files:
+  - group_vars/all
+  tasks:
+  - name: ensure ntpd is at the latest version
+    yum: pkg=ntp state=latest
+    notify:
+    - restart ntpd
+  - name: install java
+    yum: pkg=java-1.8.0-openjdk.x86_64
+  - name: mkdir dynamodb
+    file:
+      path: "{{ dynamo_dest }}"
+      state: directory
+      owner: root
+      group: root
+      mode: 0755
+
+  - name: donwload dynamo local package
+    get_url:
+      url: https://s3-ap-northeast-1.amazonaws.com/dynamodb-local-tokyo/dynamodb_local_latest.tar.gz
+      dest: "{{ dynamo_dest }}/{{ dynamo_archive }}"
+
+  - name: unzip dynamo.tar.gz
+    unarchive:
+      src: "{{ dynamo_dest }}/{{ dynamo_archive }}"
+      dest: "{{ dynamo_dest }}"
+
+  - name: run dynamo local in background
+    shell: java -Djava.library.path="{{ dynamo_dest }}/DynamoDBLocal_lib" -jar DynamoDBLocal.jar -sharedDb &
+
+  handlers:
+    - name: restart ntpd
+      service: name=ntpd state=restarted
+

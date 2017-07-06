@@ -1,0 +1,2 @@
+dynamo_dest: /dynamodb
+dynamo_archive: dynamodb.tar.gz
